@@ -13,5 +13,5 @@ Toute aide est la bienvenue
 
 ## Contributeurs
 
-[Soyuka](https://github.com/soyuka/)
-[Hardware](https://github.com/hardware/)
+* [Soyuka](https://github.com/soyuka/)
+* [Hardware](https://github.com/hardware/)
