@@ -1,6 +1,5 @@
 #!/bin/bash
 #
-# "C'toi le nuisible pis c'est tout !" :D
 #
 # Envoie sur paste.debian.net désactivé le temps de tester...
 #
@@ -70,8 +69,7 @@ function gen()
 
 function checkBin() # $2 utile pour faire une redirection dans $RAPPORT + Pas d'installation
 {
-	#if ! [[ $(dpkg -s $1 | grep Status ) =~ "Status: install ok installed" ]]; then # $1 = Nom du programme
-		if ! [[ $(dpkg -s "$1" | grep Status ) =~ "Status: install ok installed" ]]  &> /dev/null ; then # $1 = Nom du programme
+	if ! [[ $(dpkg -s "$1" | grep Status ) =~ "Status: install ok installed" ]]  &> /dev/null ; then # $1 = Nom du programme
 		if [[ $2 = 1 ]]; then
 			echo "Le programme $1 n'est pas installé" >> $RAPPORT
 		else
@@ -99,7 +97,6 @@ function rapport()
 	# $1 = Fichier
 	if ! [[ -z $1 ]]; then
 		if [[ -f $1 ]]; then
-			#if [[ $(cat "$1" | wc -l) == 0 ]]; then
 			if [[ $(wc -l < "$1") == 0 ]]; then
 				FILE="--> Fichier Vide"
 			else
