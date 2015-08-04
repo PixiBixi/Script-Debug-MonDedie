@@ -1,16 +1,24 @@
 #!/bin/bash
+#
+# "C'toi le nuisible pis c'est tout !" :D
+#
+# Envoie sur paste.debian.net désactivé le temps de tester...
+#
 
 CSI="\033["
 CEND="${CSI}0m"
 CGREEN="${CSI}1;32m"
 CRED="${CSI}1;31m"
+CYELLOW="${CSI}1;33m"
+CBLUE="${CSI}1;34m"
 
 RAPPORT="/tmp/rapport.txt"
-NOYAU=$(uname -r);
+NOYAU=$(uname -r)
+DATE=$(date +"%d-%m-%Y à %H:%M")
 
 # Pour le serveur mail
-PORTS_MAIL=(25 110 143 587 993 995 4190);
-SOFT_MAIL=(opendkim opendkim-tools opendmarc spamassassin spamc dovecot-sieve dovecot-managesieved postfix postfix-mysql dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql);
+PORTS_MAIL=(25 110 143 587 993 995 4190)
+SOFT_MAIL=(opendkim opendkim-tools opendmarc spamassassin spamc dovecot-sieve dovecot-managesieved postfix postfix-mysql dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql)
 OPENDKIM_CONF=("/etc/opendkim.conf" "/etc/opendkim/TrustedHosts"\
 			"/etc/opendkim/KeyTable" "/etc/opendkim/SigningTable"\
 			"/etc/opendmarc.conf")
@@ -26,60 +34,64 @@ DIVERS_CONF=("/etc/spamassassin/local.cf" "/var/www/postfixadmin/config.inc.php"
 			"/etc/nginx/sites-enabled/rainloop.conf" "/etc/nginx/sites-enabled/postfixadmin.conf")
 
 if [[ $UID != 0 ]]; then
-	echo -e "Ce script doit être executé en tant que root";
-	exit;
+	echo -e "${CRED}Ce script doit être executé en tant que root${CEND}"
+	exit
 fi
 
 function gen()
 {
 	if [[ -f $RAPPORT ]]; then
-		echo -e "Fichier de rapport ${CRED}détecté${CEND}";
-		rm $RAPPORT;
-		echo -e "Fichier de rapport ${CGREEN}supprimé${CEND}";
+		echo -e "${CRED}\nFichier de rapport détecté${CEND}"
+		rm $RAPPORT
+		echo -e "${CGREEN}Fichier de rapport supprimé${CEND}"
 	fi
-	touch $RAPPORT;
+	touch $RAPPORT
 	case $1 in
 		ruTorrent )
-				echo -e "###################################" >> $RAPPORT
-				echo -e "## Rapport pour ruTorrent        ##" >> $RAPPORT
-				echo -e "###################################" >> $RAPPORT
-				echo -e "Utilisateur ruTorrent => $USERNAME" >> $RAPPORT
-				echo -e "Kernel : $NOYAU" >> $RAPPORT
+				cat <<-EOF >> $RAPPORT
+
+				### Rapport pour ruTorrent généré le $DATE ###
+
+				Utilisateur ruTorrent => $USERNAME
+				Kernel : $NOYAU
+				EOF
 			;;
 
 		mail )
-				echo -e "###################################" >> $RAPPORT
-				echo -e "## Rapport pour Mail             ##" >> $RAPPORT
-				echo -e "###################################" >> $RAPPORT
-				echo -e "Kernel : $NOYAU" >> $RAPPORT
+				cat <<-EOF >> $RAPPORT
+
+				### Rapport pour Mail généré le $DATE 
+
+				Kernel : $NOYAU
+				EOF
 			;;
 	esac
 }
 
 function checkBin() # $2 utile pour faire une redirection dans $RAPPORT + Pas d'installation
 {
-	if ! [[ $(dpkg -s $1 | grep Status ) =~ "Status: install ok installed" ]]; then # $1 = Nom du programme
+	#if ! [[ $(dpkg -s $1 | grep Status ) =~ "Status: install ok installed" ]]; then # $1 = Nom du programme
+		if ! [[ $(dpkg -s "$1" | grep Status ) =~ "Status: install ok installed" ]]  &> /dev/null ; then # $1 = Nom du programme
 		if [[ $2 = 1 ]]; then
-			echo -e "Le programme "$1" n'est pas installé" >> $RAPPORT;
+			echo "Le programme $1 n'est pas installé" >> $RAPPORT
 		else
-			echo -e "Le programme "$1" n'est pas installé";
-			echo -e "Il va être installer pour la suite du script";
-			sleep 2;
-			apt-get -y install "$1";
+			echo -e "${CGREEN}\nLe programme${CEND} ${CYELLOW}$1${CEND}${CGREEN} n'est pas installé\nIl va être installé pour la suite du script${CEND}"
+			sleep 2
+			apt-get -y install "$1" &>/dev/null
 		fi
 	else
 		if [[ $2 = 1 ]]; then
-			echo -e "Le programme "$1" est installé" >> $RAPPORT;
+			echo "Le programme $1 est installé" >> $RAPPORT
 		fi
 	fi
 }
 
 function genRapport()
 {
-	echo -e "${CGREEN}\nFichier de rapport terminé${CEND}\n";
-	LINK=$(/usr/bin/pastebinit $RAPPORT);
-	echo -e "Sur le topic adéquat, envoyez ce lien $LINK";
-	echo -e "Fichier stocké dans ${CGREEN}$RAPPORT${CEND}";
+	echo -e "${CBLUE}\nFichier de rapport terminé${CEND}\n"
+	#LINK=$(/usr/bin/pastebinit $RAPPORT)
+	echo -e "Allez sur le topic adéquat et envoyez ce lien:\n${CYELLOW}$LINK${CEND}"
+	echo -e "\nFichier stocké en: ${CYELLOW}$RAPPORT${CEND}"
 }
 
 function rapport()
@@ -87,10 +99,11 @@ function rapport()
 	# $1 = Fichier
 	if ! [[ -z $1 ]]; then
 		if [[ -f $1 ]]; then
-			if [[ $(cat "$1" | wc -l) == 0 ]]; then
+			#if [[ $(cat "$1" | wc -l) == 0 ]]; then
+			if [[ $(wc -l < "$1") == 0 ]]; then
 				FILE="--> Fichier Vide"
 			else
-				FILE=$(cat $1)
+				FILE=$(cat "$1")
 			fi
 		else
 			FILE="--> Fichier Invalide"
@@ -107,55 +120,68 @@ function rapport()
 
 	# $3 = Affichage header
 	if [[ $3 == 1 ]]; then
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## $NAME                  ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## $NAME                  ##
+		...................................
+		EOF
 	fi
-	echo -e "File : $1" >> $RAPPORT;
-	echo -e "$FILE\n" >> $RAPPORT;
-	echo -e "-----------------------------\n" >> $RAPPORT;
+	cat <<-EOF >> $RAPPORT
+	File : $1
+
+	$FILE
+	EOF
 }
 
-echo -e "#############################################";
-echo -e "##    Afin d'aider les gens de mondedie   ##";
-echo -e "##     Ce script a été mit en place       ##";
-echo -e "## pour leur transmettre les bonnes infos ##";
-echo -e "#############################################\n";
+echo -e "${CBLUE}
+#############################################
+##    Afin d'aider les gens de mondedie    ##
+##     Ce script a été mis en place        ##
+## pour leur transmettre les bonnes infos  ##
+#############################################${CEND}"
 
-echo -e "Voici les différentes options :";
-echo -e "1. ruTorrent";
-echo -e "2. Serveur Mail";
-read -r -p "Entrez votre choix : " OPTION;
+echo -e "${CGREEN}\nVoici les différentes options:${CEND}"
+echo -e "${CYELLOW} 1${CEND} ruTorrent"
+echo -e "${CYELLOW} 2${CEND} Serveur Mail"
+echo -e -n "${CGREEN}Entrez votre choix :${CEND} "
+read -r OPTION
 
 case $OPTION in
 	1 )
-		read -r -p "Rentrez le nom de votre utilisateur rTorrent : " USERNAME;
-		echo -e "Vous avez sélectionné ${CGREEN}ruTorrent${CEND}\n";
+		echo -e -n "${CGREEN}Rentrez le nom de votre utilisateur rTorrent:${CEND} "
+		read -r USERNAME
+		echo -e "Vous avez sélectionné ${CYELLOW}ruTorrent${CEND}\n"
 
-		gen ruTorrent "$USERNAME";
-		checkBin pastebinit;
+		gen ruTorrent "$USERNAME"
+		checkBin pastebinit
 
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## Utilisateur                  ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;
+		cat <<-EOF >> $RAPPORT
+		...................................
+		## Utilisateur                  ##
+		...................................
+		EOF
 
 		if [[ $(grep "$USERNAME:" -c /etc/shadow) != "1" ]]; then
-			echo -e "--> Utilisateur inexistant" >> $RAPPORT;
-			VALID_USER=0;
+			echo -e "--> Utilisateur inexistant" >> $RAPPORT
+			VALID_USER=0
 		else
-			echo -e "--> Utilisateur $USERNAME existant" >> $RAPPORT;
+			echo -e "--> Utilisateur $USERNAME existant" >> $RAPPORT
 		fi
 
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## .rtorrent.rc                  ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## .rtorrent.rc                  ##
+		...................................
+		EOF
 		if [[ $VALID_USER = 0 ]]; then
-			echo "--> Fichier introuvable (Utilisateur inexistant)" >> $RAPPORT;
+			echo "--> Fichier introuvable (Utilisateur inexistant)" >> $RAPPORT
 		else
 			if ! [[ -f "/home/$USERNAME/.rtorrent.rc" ]]; then
-				echo "--> Fichier introuvable" >> $RAPPORT;
+				echo "--> Fichier introuvable" >> $RAPPORT
 			else
-				cat "/home/$USERNAME/.rtorrent.rc" >> $RAPPORT;
+				cat "/home/$USERNAME/.rtorrent.rc" >> $RAPPORT
 			fi
 		fi
 
@@ -164,98 +190,123 @@ case $OPTION in
 		rapport /etc/nginx/sites-enabled/rutorrent.conf ruTorrent.Conf.nGinx 1
 		rapport /var/www/rutorrent/conf/config.php ruTorrent.Config.Php 1
 
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## ruTorrent Conf Perso (config) ##" >> $RAPPORT
-		echo -e "..................................." >> $RAPPORT
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## ruTorrent Conf Perso (config) ##
+		...................................
+		EOF
 		if [[ $VALID_USER = 0 ]]; then
-			echo "--> Fichier introuvable (Utilisateur Invalide)" >> $RAPPORT;
+			echo "--> Fichier introuvable (Utilisateur Invalide)" >> $RAPPORT
 		else
 			if ! [[ -f "/var/www/rutorrent/conf/users/$USERNAME/config.php" ]]; then
-				echo "--> Fichier introuvable" >> $RAPPORT;
+				echo "--> Fichier introuvable" >> $RAPPORT
 			else
-				cat /var/www/rutorrent/conf/users/"$USERNAME"/config.php >> $RAPPORT;
+				cat /var/www/rutorrent/conf/users/"$USERNAME"/config.php >> $RAPPORT
 			fi
 		fi
 
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## rTorrent Activity             ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;	
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## rTorrent Activity             ##
+		...................................
+		EOF
 		if [[ $VALID_USER = 0 ]]; then
-			echo -e "--> Utilisateur inexistant" >> $RAPPORT;
+			echo -e "--> Utilisateur inexistant" >> $RAPPORT
 		else
-			echo -e "$(/bin/ps uU "$USERNAME" | grep -e rtorrent)" >> $RAPPORT;
+			echo -e "$(/bin/ps uU "$USERNAME" | grep -e rtorrent)" >> $RAPPORT
 		fi
 
-		genRapport;
+		genRapport
 
 		;;
 
 	2 )
-		echo -e "Vous avez sélectionné ${CGREEN}Serveur Mail${CEND}";
-		gen mail;
-		checkBin pastebinit;
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## Check Ports                  ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;
+		echo -e "Vous avez sélectionné ${CYELLOW}Serveur Mail${CEND}"
+		gen mail
+		checkBin pastebinit
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## Check Ports                  ##
+		...................................
+		EOF
 		for PORT in "${PORTS_MAIL[@]}"
 		do
-			echo -e "$PORT :" >> $RAPPORT;
-			echo -e "$(netstat -atlnp | awk '{print $4,$7}' | grep ":$PORT ")\n" >> $RAPPORT;
+			cat <<-EOF >> $RAPPORT
+			$PORT :
+			$(netstat -atlnp | awk '{print $4,$7}' | grep ":$PORT ")
+			EOF
 		done
 
+		cat <<-EOF >> $RAPPORT
 
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## Check Softs                   ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;
+		...................................
+		## Check Softs                   ##
+		...................................
+		EOF
 		for SOFT in "${SOFT_MAIL[@]}"
 		do
 			checkBin "$SOFT" 1
-		done
+		done > /dev/null 2>&1
 
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## OpenDKIM Confs               ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## OpenDKIM Confs               ##
+		...................................
+		EOF
 		for OPENDKIM_CONF_FILE  in "${OPENDKIM_CONF[@]}"
 		do
 			rapport "$OPENDKIM_CONF_FILE"
-		done
+		done > /dev/null 2>&1
 
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## DoveCot Confs                ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## DoveCot Confs                ##
+		...................................
+		EOF
 		for DOVECOT_CONF_FILE  in "${DOVECOT_CONF[@]}"
 		do
 			rapport "$DOVECOT_CONF_FILE"
-		done
+		done > /dev/null 2>&1
 
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## PostFix Confs                ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## PostFix Confs                ##
+		...................................
+		EOF
 		for POSTFIX_CONF_FILE  in "${POSTFIX_CONF[@]}"
 		do
 			rapport "$POSTFIX_CONF_FILE"
-		done
+		done > /dev/null 2>&1
 
-		echo -e "\n..................................." >> $RAPPORT;	
-		echo -e "## Divers Confs                ##" >> $RAPPORT;
-		echo -e "..................................." >> $RAPPORT;
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## Divers Confs                ##
+		...................................
+		EOF
 		for DIVERS_CONF_FILES  in "${DIVERS_CONF[@]}"
 		do
 			rapport "$DIVERS_CONF_FILES"
-		done
+		done > /dev/null 2>&1
 
 		# Purge Passwords
-		sed -i  s/"user=postfix password=[a-zA-Z0-9]*"/"user=postfix password=monpass"/ $RAPPORT
+		sed -i  "s/user=postfix password=[a-zA-Z0-9]*/user=postfix password=monpass/g;" $RAPPORT
 		sed -i -e "s/\\\$CONF\['database_password'\] = '[^']*';$/\\\$CONF\['database_password'\] = 'monpass';/g" $RAPPORT
 		sed -i -e "s/\\\$CONF\['setup_password'\] = '[^']*';$/\\\$CONF\['setup_password'\] = 'monpass';/g" $RAPPORT
-		sed -i s/"password = [a-zA-Z0-9]*"/"password = monpass"/ $RAPPORT
+		sed -i "s/password = [a-zA-Z0-9]*/password = monpass/g;" $RAPPORT
 
 		genRapport
 		;;
 
 	* )
-		echo -e "Choix Invalide";
-		exit;
+		echo -e "${CRED}Choix Invalide${CEND}"
+		exit
 		;;
 esac
 
