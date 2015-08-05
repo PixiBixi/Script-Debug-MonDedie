@@ -1,8 +1,9 @@
 #!/bin/bash
 #
-# "C'toi le nuisible pis c'est tout !" :D
-#
-# Envoie sur paste.debian.net désactivé le temps de tester...
+# cd /tmp
+# git clone https://github.com/PiXELART/Script-Debug-MonDedie
+# cd Script-Debug-MonDedie
+# chmod a+x Script-Debug-Mondedie.sh & ./Script-Debug-Mondedie.sh
 #
 
 CSI="\033["
@@ -70,8 +71,7 @@ function gen()
 
 function checkBin() # $2 utile pour faire une redirection dans $RAPPORT + Pas d'installation
 {
-	#if ! [[ $(dpkg -s $1 | grep Status ) =~ "Status: install ok installed" ]]; then # $1 = Nom du programme
-		if ! [[ $(dpkg -s "$1" | grep Status ) =~ "Status: install ok installed" ]]  &> /dev/null ; then # $1 = Nom du programme
+	if ! [[ $(dpkg -s "$1" | grep Status ) =~ "Status: install ok installed" ]]  &> /dev/null ; then # $1 = Nom du programme
 		if [[ $2 = 1 ]]; then
 			echo "Le programme $1 n'est pas installé" >> $RAPPORT
 		else
@@ -89,7 +89,7 @@ function checkBin() # $2 utile pour faire une redirection dans $RAPPORT + Pas d'
 function genRapport()
 {
 	echo -e "${CBLUE}\nFichier de rapport terminé${CEND}\n"
-	#LINK=$(/usr/bin/pastebinit $RAPPORT)
+	LINK=$(/usr/bin/pastebinit $RAPPORT)
 	echo -e "Allez sur le topic adéquat et envoyez ce lien:\n${CYELLOW}$LINK${CEND}"
 	echo -e "\nFichier stocké en: ${CYELLOW}$RAPPORT${CEND}"
 }
@@ -99,7 +99,6 @@ function rapport()
 	# $1 = Fichier
 	if ! [[ -z $1 ]]; then
 		if [[ -f $1 ]]; then
-			#if [[ $(cat "$1" | wc -l) == 0 ]]; then
 			if [[ $(wc -l < "$1") == 0 ]]; then
 				FILE="--> Fichier Vide"
 			else
@@ -132,6 +131,16 @@ function rapport()
 
 	$FILE
 	EOF
+}
+
+function remove()
+{
+	echo -e -n "${CGREEN}\nVoulez vous désinstaller Pastebinit? (y/n]:${CEND} "
+	read -r PASTEBINIT
+	if [ "$PASTEBINIT" = "y" ]  || [ "$PASTEBINIT" = "Y" ]; then
+		apt-get remove -y pastebinit &>/dev/null
+		echo -e "${CBLUE}Pastebinit a bien été désinstallé${CEND}"
+	fi
 }
 
 echo -e "${CBLUE}
@@ -219,7 +228,7 @@ case $OPTION in
 		fi
 
 		genRapport
-
+		remove
 		;;
 
 	2 )
@@ -302,6 +311,7 @@ case $OPTION in
 		sed -i "s/password = [a-zA-Z0-9]*/password = monpass/g;" $RAPPORT
 
 		genRapport
+		remove
 		;;
 
 	* )
