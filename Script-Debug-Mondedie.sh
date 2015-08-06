@@ -124,7 +124,7 @@ function genRapport()
 	echo -e "${CBLUE}\nFichier de rapport terminé${CEND}\n"
 	LINK=$(/usr/bin/pastebinit $RAPPORT)
 	echo -e "Allez sur le topic adéquat et envoyez ce lien:\n${CYELLOW}$LINK${CEND}"
-	echo -e "\nFichier stocké en: ${CYELLOW}$RAPPORT${CEND}"
+	echo -e "\Rapport stocké dans le fichier : ${CYELLOW}$RAPPORT${CEND}"
 }
 
 function rapport()
@@ -160,7 +160,8 @@ function rapport()
 		EOF
 	fi
 	cat <<-EOF >> $RAPPORT
-	File : $1
+
+	##### ----------- File : $1 -----------------------------------------------------------------------------------------------------------------------------
 
 	$FILE
 	EOF
@@ -168,7 +169,7 @@ function rapport()
 
 function remove()
 {
-	echo -e -n "${CGREEN}\nVoulez vous désinstaller Pastebinit? (y/n]:${CEND} "
+	echo -e -n "${CGREEN}\nVoulez vous désinstaller Pastebinit? (y/n):${CEND} "
 	read -r PASTEBINIT
 	if [ "$PASTEBINIT" = "y" ]  || [ "$PASTEBINIT" = "Y" ]; then
 		apt-get remove -y pastebinit &>/dev/null
@@ -193,7 +194,7 @@ case $OPTION in
 	1 )
 		echo -e -n "${CGREEN}Rentrez le nom de votre utilisateur rTorrent:${CEND} "
 		read -r USERNAME
-		echo -e "Vous avez sélectionné ${CYELLOW}ruTorrent${CEND}\n"
+		echo -e "\nVous avez sélectionné ${CYELLOW}ruTorrent${CEND}\n"
 
 		gen ruTorrent "$USERNAME"
 		checkBin pastebinit
