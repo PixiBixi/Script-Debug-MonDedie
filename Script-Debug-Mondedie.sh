@@ -18,7 +18,7 @@ RAPPORT="/tmp/rapport.txt"
 NOYAU=$(uname -r)
 DATE=$(date +"%d-%m-%Y à %H:%M")
 DOMAIN=$(hostname -d 2> /dev/null)
-WANIP=$(dig o-o.myaddr.l.google.com @ns1.google.com txt +short | sed -e '2d;s/"//g\')
+WANIP=$(dig o-o.myaddr.l.google.com @ns1.google.com txt +short | sed 's/"//g')
 
 # CONFIGURATION POUR LE SERVEUR DE MAIL
 # #######################################################################################################
