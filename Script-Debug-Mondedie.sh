@@ -336,10 +336,10 @@ case $OPTION in
 		done > /dev/null 2>&1
 
 		# Purge Passwords
-		sed -i  "s/user=postfix password=[a-zA-Z0-9]*/user=postfix password=monpass/g;" $RAPPORT
-		sed -i -e "s/\\\$CONF\['database_password'\] = '[^']*';$/\\\$CONF\['database_password'\] = 'monpass';/g" $RAPPORT
-		sed -i -e "s/\\\$CONF\['setup_password'\] = '[^']*';$/\\\$CONF\['setup_password'\] = 'monpass';/g" $RAPPORT
-		sed -i "s/password = [a-zA-Z0-9]*/password = monpass/g;" $RAPPORT
+		sed -i -e "s/user=postfix password=[a-zA-Z0-9]*/user=postfix password=monpass/g;" \
+		       -e "s/\\\$CONF\['database_password'\] = '[^']*';$/\\\$CONF\['database_password'\] = 'monpass';/g" \
+		       -e "s/\\\$CONF\['setup_password'\] = '[^']*';$/\\\$CONF\['setup_password'\] = 'monpass';/g" \
+		       -e "s/password = [a-zA-Z0-9]*/password = monpass/g;" $RAPPORT
 
 		genRapport
 		remove
