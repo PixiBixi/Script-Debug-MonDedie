@@ -15,3 +15,4 @@ Toute aide est la bienvenue
 
 * [Soyuka](https://github.com/soyuka/)
 * [Hardware](https://github.com/hardware/)
+* [ex_rat](https://github.com/exrat)
