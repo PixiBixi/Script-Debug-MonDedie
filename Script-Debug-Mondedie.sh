@@ -17,23 +17,55 @@ CBLUE="${CSI}1;34m"
 RAPPORT="/tmp/rapport.txt"
 NOYAU=$(uname -r)
 DATE=$(date +"%d-%m-%Y à %H:%M")
+DOMAIN=$(hostname -d 2> /dev/null)
+WANIP=$(dig o-o.myaddr.l.google.com @ns1.google.com txt +short | sed 's/"//g')
 
-# Pour le serveur mail
+# CONFIGURATION POUR LE SERVEUR DE MAIL
+# #######################################################################################################
+
 PORTS_MAIL=(25 110 143 587 993 995 4190)
-SOFT_MAIL=(opendkim opendkim-tools opendmarc spamassassin spamc dovecot-sieve dovecot-managesieved postfix postfix-mysql dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql)
-OPENDKIM_CONF=("/etc/opendkim.conf" "/etc/opendkim/TrustedHosts"\
-			"/etc/opendkim/KeyTable" "/etc/opendkim/SigningTable"\
-			"/etc/opendmarc.conf")
-DOVECOT_CONF=("/etc/dovecot/dovecot.conf" "/etc/dovecot/dovecot-sql.conf.ext"\
-			"/etc/dovecot/conf.d/10-auth.conf" "/etc/dovecot/conf.d/auth-sql.conf.ext"\
-			"/etc/dovecot/conf.d/10-master.conf" "/etc/dovecot/conf.d/10-ssl.conf"\
-			"/etc/dovecot/conf.d/90-sieve.conf" "/etc/dovecot/conf.d/10-mail.conf")
-POSTFIX_CONF=("/etc/postfix/main.cf" "/etc/postfix/master.cf"\
-				"/etc/postfix/mysql-virtual-mailbox-domains.cf"\
-				"/etc/postfix/mysql-virtual-mailbox-maps.cf" "/etc/postfix/mysql-virtual-alias-maps.cf")
-DIVERS_CONF=("/etc/spamassassin/local.cf" "/var/www/postfixadmin/config.inc.php"\
-			"/var/log/mail.warn" "/var/log/mail.err"\
-			"/etc/nginx/sites-enabled/rainloop.conf" "/etc/nginx/sites-enabled/postfixadmin.conf")
+
+SOFT_MAIL=(                                                                                   \
+	postfix postfix-mysql                                                                     \
+	dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql dovecot-sieve dovecot-managesieved \
+	opendkim opendkim-tools opendmarc                                                         \
+	spamassassin spamc
+)
+
+OPENDKIM_CONF=(                  \
+	"/etc/opendkim.conf"         \
+	"/etc/opendkim/TrustedHosts" \
+	"/etc/opendkim/KeyTable"     \
+	"/etc/opendkim/SigningTable" \
+	"/etc/opendmarc.conf"
+)
+
+DOVECOT_CONF=(                              \
+	"/etc/dovecot/dovecot.conf"             \
+	"/etc/dovecot/dovecot-sql.conf.ext"     \
+	"/etc/dovecot/conf.d/auth-sql.conf.ext" \
+	"/etc/dovecot/conf.d/10-auth.conf"      \
+	"/etc/dovecot/conf.d/10-mail.conf"      \
+	"/etc/dovecot/conf.d/10-master.conf"    \
+	"/etc/dovecot/conf.d/10-ssl.conf"       \
+	"/etc/dovecot/conf.d/20-lmtp.conf"      \
+	"/etc/dovecot/conf.d/90-sieve.conf"
+)
+
+POSTFIX_CONF=(                                      \
+	"/etc/postfix/main.cf"                          \
+	"/etc/postfix/master.cf"                        \
+	"/etc/postfix/mysql-virtual-mailbox-domains.cf" \
+	"/etc/postfix/mysql-virtual-mailbox-maps.cf"    \
+	"/etc/postfix/mysql-virtual-alias-maps.cf"
+)
+
+CLAMAV_CONF=("/etc/clamav/freshclam.conf" "/etc/clamav/clamd.conf")
+SPAM_CONF=("/etc/spamassassin/local.cf" "/etc/default/spamassassin")
+LOGS_CONF=("/var/log/mail.warn" "/var/log/mail.err")
+VHOST_CONF=("/etc/nginx/sites-enabled/rainloop.conf" "/etc/nginx/sites-enabled/postfixadmin.conf")
+
+# #######################################################################################################
 
 if [[ $UID != 0 ]]; then
 	echo -e "${CRED}Ce script doit être executé en tant que root${CEND}"
@@ -62,7 +94,7 @@ function gen()
 		mail )
 				cat <<-EOF >> $RAPPORT
 
-				### Rapport pour Mail généré le $DATE 
+				### Rapport pour Mail généré le $DATE
 
 				Kernel : $NOYAU
 				EOF
@@ -92,7 +124,7 @@ function genRapport()
 	echo -e "${CBLUE}\nFichier de rapport terminé${CEND}\n"
 	LINK=$(/usr/bin/pastebinit $RAPPORT)
 	echo -e "Allez sur le topic adéquat et envoyez ce lien:\n${CYELLOW}$LINK${CEND}"
-	echo -e "\nFichier stocké en: ${CYELLOW}$RAPPORT${CEND}"
+	echo -e "\Rapport stocké dans le fichier : ${CYELLOW}$RAPPORT${CEND}"
 }
 
 function rapport()
@@ -128,7 +160,8 @@ function rapport()
 		EOF
 	fi
 	cat <<-EOF >> $RAPPORT
-	File : $1
+
+	##### ----------- File : $1 -----------------------------------------------------------------------------------------------------------------------------
 
 	$FILE
 	EOF
@@ -136,7 +169,7 @@ function rapport()
 
 function remove()
 {
-	echo -e -n "${CGREEN}\nVoulez vous désinstaller Pastebinit? (y/n]:${CEND} "
+	echo -e -n "${CGREEN}\nVoulez vous désinstaller Pastebinit? (y/n):${CEND} "
 	read -r PASTEBINIT
 	if [ "$PASTEBINIT" = "y" ]  || [ "$PASTEBINIT" = "Y" ]; then
 		apt-get remove -y pastebinit &>/dev/null
@@ -161,7 +194,7 @@ case $OPTION in
 	1 )
 		echo -e -n "${CGREEN}Rentrez le nom de votre utilisateur rTorrent:${CEND} "
 		read -r USERNAME
-		echo -e "Vous avez sélectionné ${CYELLOW}ruTorrent${CEND}\n"
+		echo -e "\nVous avez sélectionné ${CYELLOW}ruTorrent${CEND}\n"
 
 		gen ruTorrent "$USERNAME"
 		checkBin pastebinit
@@ -267,7 +300,7 @@ case $OPTION in
 		## OpenDKIM Confs               ##
 		...................................
 		EOF
-		for OPENDKIM_CONF_FILE  in "${OPENDKIM_CONF[@]}"
+		for OPENDKIM_CONF_FILE in "${OPENDKIM_CONF[@]}"
 		do
 			rapport "$OPENDKIM_CONF_FILE"
 		done > /dev/null 2>&1
@@ -278,7 +311,7 @@ case $OPTION in
 		## DoveCot Confs                ##
 		...................................
 		EOF
-		for DOVECOT_CONF_FILE  in "${DOVECOT_CONF[@]}"
+		for DOVECOT_CONF_FILE in "${DOVECOT_CONF[@]}"
 		do
 			rapport "$DOVECOT_CONF_FILE"
 		done > /dev/null 2>&1
@@ -289,7 +322,7 @@ case $OPTION in
 		## PostFix Confs                ##
 		...................................
 		EOF
-		for POSTFIX_CONF_FILE  in "${POSTFIX_CONF[@]}"
+		for POSTFIX_CONF_FILE in "${POSTFIX_CONF[@]}"
 		do
 			rapport "$POSTFIX_CONF_FILE"
 		done > /dev/null 2>&1
@@ -297,19 +330,87 @@ case $OPTION in
 		cat <<-EOF >> $RAPPORT
 
 		...................................
-		## Divers Confs                ##
+		## ClamAV Confs                ##
 		...................................
 		EOF
-		for DIVERS_CONF_FILES  in "${DIVERS_CONF[@]}"
+		for CLAMAV_CONF_FILES in "${CLAMAV_CONF[@]}"
 		do
-			rapport "$DIVERS_CONF_FILES"
+			rapport "$CLAMAV_CONF_FILES"
 		done > /dev/null 2>&1
 
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## Spamassassin Confs            ##
+		...................................
+		EOF
+		for SPAM_CONF_FILES in "${SPAM_CONF[@]}"
+		do
+			rapport "$SPAM_CONF_FILES"
+		done > /dev/null 2>&1
+
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## Logs                          ##
+		...................................
+		EOF
+		for LOGS_FILES in "${LOGS_CONF[@]}"
+		do
+			rapport "$LOGS_FILES"
+		done > /dev/null 2>&1
+
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## Vhost Confs                   ##
+		...................................
+		EOF
+		for VHOST_CONF_FILES in "${VHOST_CONF[@]}"
+		do
+			rapport "$VHOST_CONF_FILES"
+		done > /dev/null 2>&1
+
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## DNS                           ##
+		...................................
+
+		- MX       : $(dig +nocmd +noall +answer MX    ${DOMAIN})
+		- DKIM     : $(dig +nocmd +noall +answer TXT   mail._domainkey.${DOMAIN})
+		- DMARC    : $(dig +nocmd +noall +answer TXT   _dmarc.${DOMAIN})
+		- SPF      : $(dig +nocmd +noall +answer TXT   _domainkey.${DOMAIN})
+		- PFA      : $(dig +nocmd +noall +answer CNAME postfixadmin.${DOMAIN})
+		- RAINLOOP : $(dig +nocmd +noall +answer CNAME rainloop.${DOMAIN})
+		- REVERSE  : $(dig +short -x ${WANIP})
+
+		EOF
+
+		echo ""
+		read -rp "> Veuillez saisir une adresse mail paramétrée sur ce serveur : " EMAIL
+
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## DOVEADM                       ##
+		...................................
+
+		- User Info --------------------
+		$(doveadm user ${EMAIL})
+		--------------------------------
+
+		- Dovecot errors ---------------
+		$(doveadm log errors)
+		--------------------------------
+
+		EOF
+
 		# Purge Passwords
-		sed -i  "s/user=postfix password=[a-zA-Z0-9]*/user=postfix password=monpass/g;" $RAPPORT
-		sed -i -e "s/\\\$CONF\['database_password'\] = '[^']*';$/\\\$CONF\['database_password'\] = 'monpass';/g" $RAPPORT
-		sed -i -e "s/\\\$CONF\['setup_password'\] = '[^']*';$/\\\$CONF\['setup_password'\] = 'monpass';/g" $RAPPORT
-		sed -i "s/password = [a-zA-Z0-9]*/password = monpass/g;" $RAPPORT
+		sed -i -e "s/user=postfix password=[a-zA-Z0-9]*/user=postfix password=monpass/g;" \
+		       -e "s/\\\$CONF\['database_password'\] = '[^']*';$/\\\$CONF\['database_password'\] = 'monpass';/g" \
+		       -e "s/\\\$CONF\['setup_password'\] = '[^']*';$/\\\$CONF\['setup_password'\] = 'monpass';/g" \
+		       -e "s/password = [a-zA-Z0-9]*/password = monpass/g;" $RAPPORT
 
 		genRapport
 		remove
