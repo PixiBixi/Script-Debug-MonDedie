@@ -18,22 +18,52 @@ RAPPORT="/tmp/rapport.txt"
 NOYAU=$(uname -r)
 DATE=$(date +"%d-%m-%Y à %H:%M")
 
-# Pour le serveur mail
+# CONFIGURATION POUR LE SERVEUR DE MAIL
+# #######################################################################################################
+
 PORTS_MAIL=(25 110 143 587 993 995 4190)
-SOFT_MAIL=(opendkim opendkim-tools opendmarc spamassassin spamc dovecot-sieve dovecot-managesieved postfix postfix-mysql dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql)
-OPENDKIM_CONF=("/etc/opendkim.conf" "/etc/opendkim/TrustedHosts"\
-			"/etc/opendkim/KeyTable" "/etc/opendkim/SigningTable"\
-			"/etc/opendmarc.conf")
-DOVECOT_CONF=("/etc/dovecot/dovecot.conf" "/etc/dovecot/dovecot-sql.conf.ext"\
-			"/etc/dovecot/conf.d/10-auth.conf" "/etc/dovecot/conf.d/auth-sql.conf.ext"\
-			"/etc/dovecot/conf.d/10-master.conf" "/etc/dovecot/conf.d/10-ssl.conf"\
-			"/etc/dovecot/conf.d/90-sieve.conf" "/etc/dovecot/conf.d/10-mail.conf")
-POSTFIX_CONF=("/etc/postfix/main.cf" "/etc/postfix/master.cf"\
-				"/etc/postfix/mysql-virtual-mailbox-domains.cf"\
-				"/etc/postfix/mysql-virtual-mailbox-maps.cf" "/etc/postfix/mysql-virtual-alias-maps.cf")
-DIVERS_CONF=("/etc/spamassassin/local.cf" "/var/www/postfixadmin/config.inc.php"\
-			"/var/log/mail.warn" "/var/log/mail.err"\
-			"/etc/nginx/sites-enabled/rainloop.conf" "/etc/nginx/sites-enabled/postfixadmin.conf")
+
+SOFT_MAIL=(                                                                                   \
+	postfix postfix-mysql                                                                     \
+	dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql dovecot-sieve dovecot-managesieved \
+	opendkim opendkim-tools opendmarc                                                         \
+	spamassassin spamc
+)
+
+OPENDKIM_CONF=(                  \
+	"/etc/opendkim.conf"         \
+	"/etc/opendkim/TrustedHosts" \
+	"/etc/opendkim/KeyTable"     \
+	"/etc/opendkim/SigningTable" \
+	"/etc/opendmarc.conf"
+)
+
+DOVECOT_CONF=(                              \
+	"/etc/dovecot/dovecot.conf"             \
+	"/etc/dovecot/dovecot-sql.conf.ext"     \
+	"/etc/dovecot/conf.d/auth-sql.conf.ext" \
+	"/etc/dovecot/conf.d/10-auth.conf"      \
+	"/etc/dovecot/conf.d/10-mail.conf"      \
+	"/etc/dovecot/conf.d/10-master.conf"    \
+	"/etc/dovecot/conf.d/10-ssl.conf"       \
+	"/etc/dovecot/conf.d/20-lmtp.conf"      \
+	"/etc/dovecot/conf.d/90-sieve.conf"
+)
+
+POSTFIX_CONF=(                                      \
+	"/etc/postfix/main.cf"                          \
+	"/etc/postfix/master.cf"                        \
+	"/etc/postfix/mysql-virtual-mailbox-domains.cf" \
+	"/etc/postfix/mysql-virtual-mailbox-maps.cf"    \
+	"/etc/postfix/mysql-virtual-alias-maps.cf"
+)
+
+CLAMAV_CONF=("/etc/clamav/freshclam.conf" "/etc/clamav/clamd.conf")
+SPAM_CONF=("/etc/spamassassin/local.cf" "/etc/default/spamassassin")
+LOGS_CONF=("/var/log/mail.warn" "/var/log/mail.err")
+VHOST_CONF=("/etc/nginx/sites-enabled/rainloop.conf" "/etc/nginx/sites-enabled/postfixadmin.conf")
+
+# #######################################################################################################
 
 if [[ $UID != 0 ]]; then
 	echo -e "${CRED}Ce script doit être executé en tant que root${CEND}"
@@ -62,7 +92,7 @@ function gen()
 		mail )
 				cat <<-EOF >> $RAPPORT
 
-				### Rapport pour Mail généré le $DATE 
+				### Rapport pour Mail généré le $DATE
 
 				Kernel : $NOYAU
 				EOF
