@@ -17,6 +17,8 @@ CBLUE="${CSI}1;34m"
 RAPPORT="/tmp/rapport.txt"
 NOYAU=$(uname -r)
 DATE=$(date +"%d-%m-%Y à %H:%M")
+DOMAIN=$(hostname -d 2> /dev/null)
+WANIP=$(dig o-o.myaddr.l.google.com @ns1.google.com txt +short | sed -e '2d;s/"//g\')
 
 # CONFIGURATION POUR LE SERVEUR DE MAIL
 # #######################################################################################################
@@ -297,7 +299,7 @@ case $OPTION in
 		## OpenDKIM Confs               ##
 		...................................
 		EOF
-		for OPENDKIM_CONF_FILE  in "${OPENDKIM_CONF[@]}"
+		for OPENDKIM_CONF_FILE in "${OPENDKIM_CONF[@]}"
 		do
 			rapport "$OPENDKIM_CONF_FILE"
 		done > /dev/null 2>&1
@@ -308,7 +310,7 @@ case $OPTION in
 		## DoveCot Confs                ##
 		...................................
 		EOF
-		for DOVECOT_CONF_FILE  in "${DOVECOT_CONF[@]}"
+		for DOVECOT_CONF_FILE in "${DOVECOT_CONF[@]}"
 		do
 			rapport "$DOVECOT_CONF_FILE"
 		done > /dev/null 2>&1
@@ -319,7 +321,7 @@ case $OPTION in
 		## PostFix Confs                ##
 		...................................
 		EOF
-		for POSTFIX_CONF_FILE  in "${POSTFIX_CONF[@]}"
+		for POSTFIX_CONF_FILE in "${POSTFIX_CONF[@]}"
 		do
 			rapport "$POSTFIX_CONF_FILE"
 		done > /dev/null 2>&1
@@ -327,13 +329,81 @@ case $OPTION in
 		cat <<-EOF >> $RAPPORT
 
 		...................................
-		## Divers Confs                ##
+		## ClamAV Confs                ##
 		...................................
 		EOF
-		for DIVERS_CONF_FILES  in "${DIVERS_CONF[@]}"
+		for CLAMAV_CONF_FILES in "${CLAMAV_CONF[@]}"
 		do
-			rapport "$DIVERS_CONF_FILES"
+			rapport "$CLAMAV_CONF_FILES"
 		done > /dev/null 2>&1
+
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## Spamassassin Confs            ##
+		...................................
+		EOF
+		for SPAM_CONF_FILES in "${SPAM_CONF[@]}"
+		do
+			rapport "$SPAM_CONF_FILES"
+		done > /dev/null 2>&1
+
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## Logs                          ##
+		...................................
+		EOF
+		for LOGS_FILES in "${LOGS_CONF[@]}"
+		do
+			rapport "$LOGS_FILES"
+		done > /dev/null 2>&1
+
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## Vhost Confs                   ##
+		...................................
+		EOF
+		for VHOST_CONF_FILES in "${VHOST_CONF[@]}"
+		do
+			rapport "$VHOST_CONF_FILES"
+		done > /dev/null 2>&1
+
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## DNS                           ##
+		...................................
+
+		- MX       : $(dig +nocmd +noall +answer MX    ${DOMAIN})
+		- DKIM     : $(dig +nocmd +noall +answer TXT   mail._domainkey.${DOMAIN})
+		- DMARC    : $(dig +nocmd +noall +answer TXT   _dmarc.${DOMAIN})
+		- SPF      : $(dig +nocmd +noall +answer TXT   _domainkey.${DOMAIN})
+		- PFA      : $(dig +nocmd +noall +answer CNAME postfixadmin.${DOMAIN})
+		- RAINLOOP : $(dig +nocmd +noall +answer CNAME rainloop.${DOMAIN})
+		- REVERSE  : $(dig +short -x ${WANIP})
+
+		EOF
+
+		echo ""
+		read -rp "> Veuillez saisir une adresse mail paramétrée sur ce serveur : " EMAIL
+
+		cat <<-EOF >> $RAPPORT
+
+		...................................
+		## DOVEADM                       ##
+		...................................
+
+		- User Info --------------------
+		$(doveadm user ${EMAIL})
+		--------------------------------
+
+		- Dovecot errors ---------------
+		$(doveadm log errors)
+		--------------------------------
+
+		EOF
 
 		# Purge Passwords
 		sed -i -e "s/user=postfix password=[a-zA-Z0-9]*/user=postfix password=monpass/g;" \
