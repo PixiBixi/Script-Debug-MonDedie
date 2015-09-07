@@ -378,9 +378,9 @@ case $OPTION in
 		...................................
 
 		- MX       : $(dig +nocmd +noall +answer MX    ${DOMAIN})
+		- SPF      : $(dig +nocmd +noall +answer TXT   ${DOMAIN})
 		- DKIM     : $(dig +nocmd +noall +answer TXT   mail._domainkey.${DOMAIN})
 		- DMARC    : $(dig +nocmd +noall +answer TXT   _dmarc.${DOMAIN})
-		- SPF      : $(dig +nocmd +noall +answer TXT   _domainkey.${DOMAIN})
 		- PFA      : $(dig +nocmd +noall +answer CNAME postfixadmin.${DOMAIN})
 		- RAINLOOP : $(dig +nocmd +noall +answer CNAME rainloop.${DOMAIN})
 		- REVERSE  : $(dig +short -x ${WANIP})
