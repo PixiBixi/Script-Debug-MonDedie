@@ -72,8 +72,7 @@ if [[ $UID != 0 ]]; then
 	exit
 fi
 
-function gen()
-{
+function gen() {
 	if [[ -f $RAPPORT ]]; then
 		echo -e "${CRED}\nFichier de rapport détecté${CEND}"
 		rm $RAPPORT
@@ -102,8 +101,7 @@ function gen()
 	esac
 }
 
-function checkBin() # $2 utile pour faire une redirection dans $RAPPORT + Pas d'installation
-{
+function checkBin() { # $2 => No installation
 	if ! [[ $(dpkg -s "$1" | grep Status ) =~ "Status: install ok installed" ]]  &> /dev/null ; then # $1 = Nom du programme
 		if [[ $2 = 1 ]]; then
 			echo "Le programme $1 n'est pas installé" >> $RAPPORT
@@ -119,16 +117,14 @@ function checkBin() # $2 utile pour faire une redirection dans $RAPPORT + Pas d'
 	fi
 }
 
-function genRapport()
-{
+function genRapport() {
 	echo -e "${CBLUE}\nFichier de rapport terminé${CEND}\n"
-	LINK=$(/usr/bin/pastebinit -b http://pastie.org $RAPPORT)
+	LINK=$(/usr/bin/pastebinit $RAPPORT)
 	echo -e "Allez sur le topic adéquat et envoyez ce lien:\n${CYELLOW}$LINK${CEND}"
-	echo -e "\Rapport stocké dans le fichier : ${CYELLOW}$RAPPORT${CEND}"
+	echo -e "Rapport stocké dans le fichier : ${CYELLOW}$RAPPORT${CEND}"
 }
 
-function rapport()
-{
+function rapport() {
 	# $1 = Fichier
 	if ! [[ -z $1 ]]; then
 		if [[ -f $1 ]]; then
@@ -167,13 +163,14 @@ function rapport()
 	EOF
 }
 
-function remove()
-{
+function remove() {
 	echo -e -n "${CGREEN}\nVoulez vous désinstaller Pastebinit? (y/n):${CEND} "
 	read -r PASTEBINIT
-	if [ "$PASTEBINIT" = "y" ]  || [ "$PASTEBINIT" = "Y" ]; then
+	if [[ ${PASTEBINIT^^} == "Y" ]]; then
 		apt-get remove -y pastebinit &>/dev/null
 		echo -e "${CBLUE}Pastebinit a bien été désinstallé${CEND}"
+	else
+		echo -e "${CBLUE}Pastebinit n'a pas été désinstallé${CEND}"
 	fi
 }
 
