@@ -2,7 +2,7 @@
 #
 # Envoie sur paste.debian.net désactivé le temps de tester...
 # cd /tmp
-# git clone https://github.com/PiXELART/Script-Debug-MonDedie
+# git clone https://github.com/PixiBixi/Script-Debug-MonDedie
 # cd Script-Debug-MonDedie
 # chmod a+x Script-Debug-Mondedie.sh & ./Script-Debug-Mondedie.sh
 #
