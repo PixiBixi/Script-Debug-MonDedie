@@ -19,6 +19,8 @@ NOYAU=$(uname -r)
 DATE=$(date +"%d-%m-%Y à %H:%M")
 DOMAIN=$(hostname -d 2> /dev/null)
 WANIP=$(dig o-o.myaddr.l.google.com @ns1.google.com txt +short | sed 's/"//g')
+NGINX_VERSION=$(2>&1 nginx -v | grep -Eo "[0-9.+]{1,}")
+RTORRENT_VERSION=$(rtorrent -h | grep -E -o "[0-9]\.[0-9].[0-9]{1,}")
 
 # CONFIGURATION POUR LE SERVEUR DE MAIL
 # #######################################################################################################
@@ -87,6 +89,8 @@ function gen() {
 
 				Utilisateur ruTorrent => $USERNAME
 				Kernel : $NOYAU
+				nGinx : $NGINX_VERSION
+				rTorrent Version : $RTORRENT_VERSION
 				EOF
 			;;
 
@@ -96,6 +100,7 @@ function gen() {
 				### Rapport pour Mail généré le $DATE
 
 				Kernel : $NOYAU
+				nGinx : $NGINX_VERSION
 				EOF
 			;;
 	esac
